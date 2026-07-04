@@ -13,7 +13,7 @@ const TABS = [
   { id: 'setup', label: 'Setup', icon: '⚙' },
 ]
 
-const DAYS_TO_35 = Math.ceil((new Date('2032-06-29') - new Date()) / 86400000)
+const DAYS_TO_35 = Math.ceil((new Date('2031-11-26') - new Date()) / 86400000)
 
 export default function App() {
   const [tab, setTab] = useState('finance')
