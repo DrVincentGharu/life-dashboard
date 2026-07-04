@@ -15,11 +15,22 @@ const TABS = [
 
 const DAYS_TO_35 = Math.ceil((new Date('2031-11-26') - new Date()) / 86400000)
 
+const DEFAULT_CARDS = [
+  { id: 'idfc', balance: 40896, minPayment: 2045 },
+  { id: 'sbi', balance: 46528, minPayment: 2326 },
+  { id: 'hsbc', balance: 110184, minPayment: 5509 },
+]
+
+function getCards() {
+  try { return JSON.parse(localStorage.getItem('vgmr_cards')) || DEFAULT_CARDS } catch { return DEFAULT_CARDS }
+}
+
 export default function App() {
   const [tab, setTab] = useState('finance')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [synced, setSynced] = useState(false)
+  const [cards, setCards] = useState(getCards)
 
   useEffect(() => {
     loadData().then(d => {
@@ -27,6 +38,13 @@ export default function App() {
       setLoading(false)
       setSynced(isConfigured())
     })
+  }, [])
+
+  // Re-read cards from localStorage whenever Finance updates them
+  useEffect(() => {
+    const sync = () => setCards(getCards())
+    window.addEventListener('cards_updated', sync)
+    return () => window.removeEventListener('cards_updated', sync)
   }, [])
 
   const handleSetup = async (setup) => {
@@ -50,8 +68,11 @@ export default function App() {
     </div>
   )
 
-  const net = data.setup.salary + data.setup.planetsparkIncome - data.setup.emi - data.setup.rent - data.setup.living
-  const totalDebt = data.setup.balanceTransfer + data.setup.sisterLoan - data.setup.paidOff
+  const totalCardBalance = cards.reduce((sum, c) => sum + (c.balance || 0), 0)
+  const totalMinPayments = cards.reduce((sum, c) => sum + (c.minPayment || 0), 0)
+  const s = data.setup
+  const net = s.salary + s.planetsparkIncome - s.emi - s.rent - s.living - totalMinPayments
+  const totalDebt = s.balanceTransfer + s.sisterLoan + totalCardBalance - s.paidOff
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -78,7 +99,7 @@ export default function App() {
             <div>
               <span style={{ fontSize: 11, color: 'var(--text3)', display: 'block' }}>Monthly net</span>
               <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: net >= 0 ? 'var(--green)' : 'var(--red)' }}>
-                {net >= 0 ? '+' : ''}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}
+                {net >= 0 ? '+' : '-'}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}
               </span>
             </div>
             <div style={{ width: 1, background: 'var(--border)' }} />

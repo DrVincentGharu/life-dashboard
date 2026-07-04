@@ -92,6 +92,7 @@ export default function Finance({ data }) {
     const updated = cards.map(c => c.id === id ? { ...c, [field]: value } : c)
     setCards(updated)
     localStorage.setItem(CARDS_KEY, JSON.stringify(updated))
+    window.dispatchEvent(new Event('cards_updated'))
   }
 
   const s = data.setup
